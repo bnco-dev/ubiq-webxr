@@ -19,7 +19,7 @@ namespace Ubiq.XR
         private Vector3 velocity;
         private Vector3 userLocalPosition;
 
-        public Camera headCamera;
+        public GameObject headCamera;
         public Transform cameraContainer;
         public AnimationCurve cameraRubberBand;
 

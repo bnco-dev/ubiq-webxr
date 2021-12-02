@@ -17,10 +17,14 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Samples/Intro/Scenes/Apartment.unity
     guid: 64bff52f73c71a844825016cf8111b18
+  - enabled: 0
+    path: Assets/emptyScene.unity
+    guid: 3be11348b53429646958bb05dcfc0a57
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 94853b5e64b20ad4ea201d84aa95b8d9,
       type: 2}
     Unity.XR.OpenVR.Settings: {fileID: 11400000, guid: 5a1428b16d224ac44a5b5cfc7281928e,
       type: 2}
+    WebXR.Settings: {fileID: 11400000, guid: 6a6b2da4f9f25884ab1257bc38d2bad5, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 6ed61042c7521c8469439103af6e0403,
       type: 2}

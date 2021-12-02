@@ -13,7 +13,7 @@ namespace Ubiq.XR
     [RequireComponent(typeof(DesktopHand))]
     public class GraspableObjectDesktopGrasper : MonoBehaviour
     {
-        public Camera mainCamera;
+        public Camera desktopCamera;
 
         public float scrollScale = 0.1f;
 
@@ -40,10 +40,10 @@ namespace Ubiq.XR
 
         private float GetProjectedHeight(Vector3 position)
         {
-            var mainCamera = FindCamera();
+            var camera = FindCamera();
             var up = Query.ClosestPointRayRay(
                 new Ray(new Vector3(position.x, 0f, position.z), Vector3.up),
-                new Ray(mainCamera.transform.position, mainCamera.transform.forward))
+                new Ray(camera.transform.position, camera.transform.forward))
                 .start;
             return up.y;
         }
@@ -95,9 +95,9 @@ namespace Ubiq.XR
 
         private Camera FindCamera()
         {
-            if (mainCamera != null)
+            if (desktopCamera != null)
             {
-                return mainCamera;
+                return desktopCamera;
             }
 
             return Camera.main;

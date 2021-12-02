@@ -11,7 +11,7 @@ namespace Ubiq.XR
 
         public ButtonEvent PrimaryButtonPress { get; private set; }
 
-        public Camera mainCamera;
+        public Camera desktopCamera;
 
         private Vector3 previousMousePosition;
 
@@ -35,7 +35,7 @@ namespace Ubiq.XR
 
         private void Update()
         {
-            var mainCamera = FindCamera();
+            var camera = FindCamera();
             var mouseDelta = Input.mousePosition - previousMousePosition;
             previousMousePosition = Input.mousePosition;
 
@@ -48,7 +48,7 @@ namespace Ubiq.XR
             // Rotate the hand using the raycaster
             if(Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
             {
-                var ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+                var ray = camera.ScreenPointToRay(Input.mousePosition);
                 RaycastHit hit;
                 if (Physics.Raycast(ray.origin, ray.direction, out hit, 100, Physics.AllLayers))
                 {
@@ -66,9 +66,9 @@ namespace Ubiq.XR
 
         private Camera FindCamera()
         {
-            if (mainCamera != null)
+            if (desktopCamera != null)
             {
-                return mainCamera;
+                return desktopCamera;
             }
 
             return Camera.main;

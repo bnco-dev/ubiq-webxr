@@ -10,7 +10,7 @@ namespace Ubiq.XR
     public class UseableObjectDesktopUser : MonoBehaviour
     {
         public IUseable used; // single item this time because raycast will only intersect first object
-        public Camera mainCamera;
+        public Camera desktopCamera;
 
         private DesktopHand hand;
 
@@ -37,11 +37,11 @@ namespace Ubiq.XR
 
             if(Input.GetMouseButtonDown(0))
             {
-                var mainCamera = FindCamera();
+                var camera = FindCamera();
 
                 RaycastHit hit = new RaycastHit();
-                if (!Physics.Raycast(mainCamera.ScreenPointToRay(Input.mousePosition).origin,
-                                     mainCamera.ScreenPointToRay(Input.mousePosition).direction, out hit, 100,
+                if (!Physics.Raycast(camera.ScreenPointToRay(Input.mousePosition).origin,
+                                     camera.ScreenPointToRay(Input.mousePosition).direction, out hit, 100,
                                      Physics.DefaultRaycastLayers)
                 )
                 {
@@ -60,9 +60,9 @@ namespace Ubiq.XR
 
         private Camera FindCamera()
         {
-            if (mainCamera != null)
+            if (desktopCamera != null)
             {
-                return mainCamera;
+                return desktopCamera;
             }
 
             return Camera.main;

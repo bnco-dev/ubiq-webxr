@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.XR;
+// using UnityEngine.XR;
 using UnityEngine.SpatialTracking;
 using UnityEngine.Events;
-using UnityEngine.XR.Management;
+// using UnityEngine.XR.Management;
 using static UnityEngine.SpatialTracking.TrackedPoseDriver;
 
 namespace Ubiq.XR

@@ -13,7 +13,6 @@ namespace Ubiq.XR
     /// <remarks>
     /// This code is based on the Unity Interactive 360 samples, but modified so it doesn't need physics collisions.
     /// </remarks>
-    [RequireComponent(typeof(Camera))]
     public class DesktopUIRaycaster : MonoBehaviour
     {
         [System.Serializable]
@@ -24,15 +23,14 @@ namespace Ubiq.XR
         public RaycastHitEvent onRaycastHit;
         public RaycastMissEvent onRaycastMiss;
 
+        public Camera desktopCamera;
+
         private PointerEventData eventData;
         private List<RaycastResult> raycastResults;
-
-        private Camera mainCamera;
 
         private void Awake()
         {
             raycastResults = new List<RaycastResult>();
-            mainCamera = GetComponent<Camera>();
         }
 
         private void Start()
@@ -56,7 +54,7 @@ namespace Ubiq.XR
 
         private void PerformRaycast()
         {
-            var ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+            var ray = desktopCamera.ScreenPointToRay(Input.mousePosition);
 
             // Check if there is a 3d object between us and the canvas.
             var distance = float.PositiveInfinity;
