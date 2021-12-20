@@ -1,10 +1,7 @@
-﻿// #if UNITY_WEBGL && !UNITY_EDITOR
+﻿#if UNITY_WEBGL && !UNITY_EDITOR
 // Usually use Dotnet WebSockets, but for WebGL, wrap a JS lib
-using System.Net.WebSockets;
 using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
 
@@ -38,22 +35,15 @@ namespace Ubiq.Networking
 
         public string uri = "ws://localhost:8080";
 
-        private ClientWebSocket websocket;
-        // private BlockingCollection<ReferenceCountedMessage> messagesToSend;
-        private ConcurrentQueue<ReferenceCountedMessage> messagesToSend = new ConcurrentQueue<ReferenceCountedMessage>();
-        private JmBucknall.Structures.LockFreeQueue<ReferenceCountedMessage> messagesReceived = new JmBucknall.Structures.LockFreeQueue<ReferenceCountedMessage>();
+        private Queue<ReferenceCountedMessage> messagesToSend = new Queue<ReferenceCountedMessage>();
+        private Queue<ReferenceCountedMessage> messagesReceived = new Queue<ReferenceCountedMessage>();
 
         private System.Collections.IEnumerator sendEnumerator;
         private System.Collections.IEnumerator recvEnumerator;
 
         public WebSocketConnection(ConnectionDefinition def)
         {
-            // websocket = new ClientWebSocket();
-            // websocket.Options.SetBuffer(10000, 256);
-            // messagesToSend = new BlockingCollection<ReferenceCountedMessage>();
             uri = string.Format("wss://{0}:{1}", def.send_to_ip, def.send_to_port);
-            // Task.Run(WebsocketWork);
-            // WebsocketWork();
 
             if (!JsWebSocketPlugin_TryConnect(uri))
             {
@@ -68,29 +58,10 @@ namespace Ubiq.Networking
             sendEnumerator = Send();
         }
 
-//         private async void WebsocketConnect()
-//         {
-//             try
-//             {
-//                 // await websocket.ConnectAsync(new Uri(uri), CancellationToken.None);
-//                 JsWebSocketPlugin_TryConnect(uri);
-// #pragma warning disable CS4014 // (Because this call is not awaited, execution of the current method continues before the call is completed)
-//                 // Task.Run(WebsocketReceiver);
-//                 // Task.Run(WebsocketSender);
-//                 Task.Run(WebsocketWork);
-// #pragma warning restore CS4014
-//             }
-//             catch (Exception e)
-//             {
-//                 Debug.LogException(e);
-//             }
-//         }
-
         int _lastSendFrameCount = -1;
 
         public void Send(ReferenceCountedMessage message)
         {
-            // messagesToSend.Add(message);
             messagesToSend.Enqueue(message);
 
             if (Time.frameCount > _lastSendFrameCount)
@@ -103,70 +74,29 @@ namespace Ubiq.Networking
         public ReferenceCountedMessage Receive()
         {
             recvEnumerator.MoveNext();
-            return messagesReceived.Dequeue();
+            return messagesReceived.Count > 0
+                ? messagesReceived.Dequeue()
+                : null;
         }
-
-        // The demo WebSocket plugin doesn't handle multi-threaded access
-        // private void WebsocketWork()
-        // {
-        //     if (!JsWebSocketPlugin_TryConnect(uri))
-        //     {
-        //         Debug.Log("WS connection failed");
-        //         return;
-        //     }
-
-        //     var i = 0;
-        //     while (true)
-        //     {
-        //         if (JsWebSocketPlugin_IsOpen())
-        //         {
-        //             Send();
-        //             Recv();
-        //         }
-
-        //         if (JsWebSocketPlugin_IsClosed())
-        //         {
-        //             return;
-        //         }
-
-        //         Thread.Sleep(5);
-        //     }
-        // }
 
         private System.Collections.IEnumerator Send()
         {
             while (true)
             {
-                if (!messagesToSend.TryDequeue(out var message))
+                if (messagesToSend.Count == 0)
                 {
                     yield return null;
                     continue;
                 }
 
+                var message = messagesToSend.Dequeue();
                 var lenBytes = BitConverter.GetBytes(message.length);
-                // do
-                // {
-                //     var sent = JsWebSocketPlugin_Send(lenBytes,0,lenBytes.Length);
-                //     if (sent == 0)
-                //     {
-                //         yield return null;
-                //     }
-                //     else if (sent < 0)
-                //     {
-                //         yield break;
-                //     }
-                //     else
-                //     {
-                //         break;
-                //     }
-                // } while (true);
 
                 do
                 {
                     var buf = new byte[lenBytes.Length + message.length];
                     Array.Copy(lenBytes,buf,lenBytes.Length);
                     Array.Copy(message.bytes,message.start,buf,lenBytes.Length,message.length);
-                    // var sent = JsWebSocketPlugin_Send(message.bytes,message.start,message.length);
                     var sent = JsWebSocketPlugin_Send(buf,0,buf.Length);
                     if (sent == 0)
                     {
@@ -224,267 +154,143 @@ namespace Ubiq.Networking
             }
         }
 
-        // private void Recv()
-        // {
-        //     while (true)
-        //     {
-
-        //         var buffer = new byte[4];
-        //         if (JsWebSocketPlugin_Receive(buffer,0) <= 0)
-        //         {
-        //             return;
-        //         }
-        //         // var array = new ArraySegment<byte>(buffer);
-        //         // var receive = await websocket.ReceiveAsync(array, CancellationToken.None);
-
-        //         // if (receive.MessageType == WebSocketMessageType.Close)
-        //         // {
-        //         //     return;
-        //         // }
-
-        //         int len = BitConverter.ToInt32(buffer, 0);
-        //         var message = MessagePool.Shared.Rent(len);
-        //         int received = 0;
-        //         do
-        //         {
-
-        //             var receive = JsWebSocketPlugin_Receive(buffer,message.start + received);
-        //             if (receive == 0 && !JsWebSocketPlugin_IsOpen())
-        //             {
-        //                 return;
-        //             }
-
-        //             received += receive;
-        //             // receive = await websocket.ReceiveAsync(new ArraySegment<byte>(message.bytes, message.start + received, message.length - received), CancellationToken.None);
-        //             // received += receive.Count;
-
-        //             // if (receive.MessageType == WebSocketMessageType.Close)
-        //             // {
-        //             //     return;
-        //             // }
-
-        //         }
-        //         while ((message.length - received) > 0);
-
-        //         // if(!receive.EndOfMessage)
-        //         // {
-        //         //     Debug.Log("Unexpected message fragmentation across WebSocket frames.");
-        //         // }
-
-        //         messagesReceived.Enqueue(message);
-        //     }
-        // }
-
-        // private async void WebsocketSender()
-        // {
-        //     try
-        //     {
-        //         while (true)
-        //         {
-        //             var message = messagesToSend.Take();
-                    // await websocket.SendAsync(new ArraySegment<byte>(BitConverter.GetBytes(message.length)), WebSocketMessageType.Binary, false, CancellationToken.None);
-                    // await websocket.SendAsync(new ArraySegment<byte>(message.bytes, message.start, message.length), WebSocketMessageType.Binary, true, CancellationToken.None);
-        //             message.Release();
-        //         }
-        //     }
-        //     catch (InvalidOperationException)
-        //     {
-        //         return; // An InvalidOperationException means that Take() was called on a completed collection
-        //     }
-        //     catch(Exception e)
-        //     {
-        //         Debug.LogException(e); // Otherwise Unity eats it.
-        //     }
-        // }
-
-        // private async void WebsocketReceiver()
-        // {
-        //     try
-        //     {
-        //         while (true)
-        //         {
-        //             var buffer = new byte[4];
-        //             var array = new ArraySegment<byte>(buffer);
-        //             var receive = await websocket.ReceiveAsync(array, CancellationToken.None);
-
-        //             if (receive.MessageType == WebSocketMessageType.Close)
-        //             {
-        //                 return;
-        //             }
-
-        //             int len = BitConverter.ToInt32(buffer, 0);
-        //             var message = MessagePool.Shared.Rent(len);
-        //             int received = 0;
-        //             do
-        //             {
-        //                 receive = await websocket.ReceiveAsync(new ArraySegment<byte>(message.bytes, message.start + received, message.length - received), CancellationToken.None);
-        //                 received += receive.Count;
-
-        //                 if (receive.MessageType == WebSocketMessageType.Close)
-        //                 {
-        //                     return;
-        //                 }
-        //             }
-        //             while ((message.length - received) > 0);
-
-        //             if (websocket.CloseStatus != null)
-        //             {
-        //                 return;
-        //             }
-
-        //             if(!receive.EndOfMessage)
-        //             {
-        //                 Debug.Log("Unexpected message fragmentation across WebSocket frames.");
-        //             }
-
-        //             messagesReceived.Enqueue(message);
-        //         }
-        //     }
-        //     catch(Exception e)
-        //     {
-        //         Debug.LogException(e); // Otherwise Unity eats this.
-        //     }
-        // }
-
         public void Dispose()
         {
-            // messagesToSend.CompleteAdding();
-            // websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "OK", CancellationToken.None);
             JsWebSocketPlugin_Close();
         }
     }
 }
-// #endif // UNITY_WEBGL && !UNITY_EDITOR
+#endif // UNITY_WEBGL && !UNITY_EDITOR
 
-// #if UNITY_EDITOR || !UNITY_WEBGL
-// using System.Net.WebSockets;
-// using System;
-// using System.Threading;
-// using System.Threading.Tasks;
-// using System.Collections.Concurrent;
-// using UnityEngine;
+#if UNITY_EDITOR || !UNITY_WEBGL
+using System.Net.WebSockets;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using UnityEngine;
 
-// namespace Ubiq.Networking
-// {
-//     public class WebSocketConnection : INetworkConnection
-//     {
-//         public string uri = "ws://localhost:8080";
+namespace Ubiq.Networking
+{
+    public class WebSocketConnection : INetworkConnection
+    {
+        public string uri = "ws://localhost:8080";
 
-//         private ClientWebSocket websocket;
-//         private BlockingCollection<ReferenceCountedMessage> messagesToSend;
-//         private JmBucknall.Structures.LockFreeQueue<ReferenceCountedMessage> messagesReceived = new JmBucknall.Structures.LockFreeQueue<ReferenceCountedMessage>();
+        private ClientWebSocket websocket;
+        private BlockingCollection<ReferenceCountedMessage> messagesToSend;
+        private JmBucknall.Structures.LockFreeQueue<ReferenceCountedMessage> messagesReceived = new JmBucknall.Structures.LockFreeQueue<ReferenceCountedMessage>();
 
-//         public WebSocketConnection(ConnectionDefinition def)
-//         {
-//             websocket = new ClientWebSocket();
-//             websocket.Options.SetBuffer(10000, 256);
-//             messagesToSend = new BlockingCollection<ReferenceCountedMessage>();
-//             uri = string.Format("ws://{0}:{1}", def.send_to_ip, def.send_to_port);
-//             Task.Run(WebsocketConnect);
-//         }
+        public WebSocketConnection(ConnectionDefinition def)
+        {
+            websocket = new ClientWebSocket();
+            websocket.Options.SetBuffer(10000, 256);
+            messagesToSend = new BlockingCollection<ReferenceCountedMessage>();
+            uri = string.Format("ws://{0}:{1}", def.send_to_ip, def.send_to_port);
+            Task.Run(WebsocketConnect);
+        }
 
-//         private async void WebsocketConnect()
-//         {
-//             try
-//             {
-//                 await websocket.ConnectAsync(new Uri(uri), CancellationToken.None);
-// #pragma warning disable CS4014 // (Because this call is not awaited, execution of the current method continues before the call is completed)
-//                 Task.Run(WebsocketReceiver);
-//                 Task.Run(WebsocketSender);
-// #pragma warning restore CS4014
-//             }
-//             catch (Exception e)
-//             {
-//                 Debug.LogException(e);
-//             }
-//         }
+        private async void WebsocketConnect()
+        {
+            try
+            {
+                await websocket.ConnectAsync(new Uri(uri), CancellationToken.None);
+#pragma warning disable CS4014 // (Because this call is not awaited, execution of the current method continues before the call is completed)
+                Task.Run(WebsocketReceiver);
+                Task.Run(WebsocketSender);
+#pragma warning restore CS4014
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
 
-//         public void Send(ReferenceCountedMessage message)
-//         {
-//             messagesToSend.Add(message);
-//         }
+        public void Send(ReferenceCountedMessage message)
+        {
+            messagesToSend.Add(message);
+        }
 
-//         private async void WebsocketSender()
-//         {
-//             try
-//             {
-//                 while (true)
-//                 {
-//                     var message = messagesToSend.Take();
-//                     await websocket.SendAsync(new ArraySegment<byte>(BitConverter.GetBytes(message.length)), WebSocketMessageType.Binary, false, CancellationToken.None);
-//                     await websocket.SendAsync(new ArraySegment<byte>(message.bytes, message.start, message.length), WebSocketMessageType.Binary, true, CancellationToken.None);
-//                     message.Release();
-//                 }
-//             }
-//             catch (InvalidOperationException)
-//             {
-//                 return; // An InvalidOperationException means that Take() was called on a completed collection
-//             }
-//             catch(Exception e)
-//             {
-//                 Debug.LogException(e); // Otherwise Unity eats it.
-//             }
-//         }
+        private async void WebsocketSender()
+        {
+            try
+            {
+                while (true)
+                {
+                    var message = messagesToSend.Take();
+                    await websocket.SendAsync(new ArraySegment<byte>(BitConverter.GetBytes(message.length)), WebSocketMessageType.Binary, false, CancellationToken.None);
+                    await websocket.SendAsync(new ArraySegment<byte>(message.bytes, message.start, message.length), WebSocketMessageType.Binary, true, CancellationToken.None);
+                    message.Release();
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                return; // An InvalidOperationException means that Take() was called on a completed collection
+            }
+            catch(Exception e)
+            {
+                Debug.LogException(e); // Otherwise Unity eats it.
+            }
+        }
 
-//         private async void WebsocketReceiver()
-//         {
-//             try
-//             {
-//                 while (true)
-//                 {
-//                     var buffer = new byte[4];
-//                     var array = new ArraySegment<byte>(buffer);
-//                     var receive = await websocket.ReceiveAsync(array, CancellationToken.None);
+        private async void WebsocketReceiver()
+        {
+            try
+            {
+                while (true)
+                {
+                    var buffer = new byte[4];
+                    var array = new ArraySegment<byte>(buffer);
+                    var receive = await websocket.ReceiveAsync(array, CancellationToken.None);
 
-//                     if (receive.MessageType == WebSocketMessageType.Close)
-//                     {
-//                         return;
-//                     }
+                    if (receive.MessageType == WebSocketMessageType.Close)
+                    {
+                        return;
+                    }
 
-//                     int len = BitConverter.ToInt32(buffer, 0);
-//                     var message = MessagePool.Shared.Rent(len);
-//                     int received = 0;
-//                     do
-//                     {
-//                         receive = await websocket.ReceiveAsync(new ArraySegment<byte>(message.bytes, message.start + received, message.length - received), CancellationToken.None);
-//                         received += receive.Count;
+                    int len = BitConverter.ToInt32(buffer, 0);
+                    var message = MessagePool.Shared.Rent(len);
+                    int received = 0;
+                    do
+                    {
+                        receive = await websocket.ReceiveAsync(new ArraySegment<byte>(message.bytes, message.start + received, message.length - received), CancellationToken.None);
+                        received += receive.Count;
 
-//                         if (receive.MessageType == WebSocketMessageType.Close)
-//                         {
-//                             return;
-//                         }
-//                     }
-//                     while ((message.length - received) > 0);
+                        if (receive.MessageType == WebSocketMessageType.Close)
+                        {
+                            return;
+                        }
+                    }
+                    while ((message.length - received) > 0);
 
-//                     if (websocket.CloseStatus != null)
-//                     {
-//                         return;
-//                     }
+                    if (websocket.CloseStatus != null)
+                    {
+                        return;
+                    }
 
-//                     if(!receive.EndOfMessage)
-//                     {
-//                         Debug.Log("Unexpected message fragmentation across WebSocket frames.");
-//                     }
+                    if(!receive.EndOfMessage)
+                    {
+                        Debug.Log("Unexpected message fragmentation across WebSocket frames.");
+                    }
 
-//                     messagesReceived.Enqueue(message);
-//                 }
-//             }
-//             catch(Exception e)
-//             {
-//                 Debug.LogException(e); // Otherwise Unity eats this.
-//             }
-//         }
+                    messagesReceived.Enqueue(message);
+                }
+            }
+            catch(Exception e)
+            {
+                Debug.LogException(e); // Otherwise Unity eats this.
+            }
+        }
 
-//         public void Dispose()
-//         {
-//             messagesToSend.CompleteAdding();
-//             websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "OK", CancellationToken.None);
-//         }
+        public void Dispose()
+        {
+            messagesToSend.CompleteAdding();
+            websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "OK", CancellationToken.None);
+        }
 
-//         public ReferenceCountedMessage Receive()
-//         {
-//             return messagesReceived.Dequeue();
-//         }
-//     }
-// }
-// #endif //UNITY_EDITOR || !UNITY_WEBGL
+        public ReferenceCountedMessage Receive()
+        {
+            return messagesReceived.Dequeue();
+        }
+    }
+}
+#endif //UNITY_EDITOR || !UNITY_WEBGL

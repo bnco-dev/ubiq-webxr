@@ -155,11 +155,6 @@ namespace Ubiq.Voip
                 Permission.RequestUserPermission(Permission.Microphone);
             }
 #endif
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-            Microphone.Init();
-            Microphone.QueryAudioInput();
-#endif
         }
 
         private void OnDestroy()
@@ -189,10 +184,6 @@ namespace Ubiq.Voip
                     return;
                 }
             }
-#endif
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-            Microphone.Update();
 #endif
 
             // Run queued tasks synchronously

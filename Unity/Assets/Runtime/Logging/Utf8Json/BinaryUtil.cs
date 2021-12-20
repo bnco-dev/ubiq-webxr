@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
 
 #if NETSTANDARD
 using System.Runtime.CompilerServices;
@@ -11,7 +8,7 @@ namespace Ubiq.Logging.Utf8Json.Internal
 {
     /// <summary>
     /// The Dynamic Array pool is a wrapper around a regular array pool that is designed to allow
-    /// expanding rented arrays with its EnsureCapacity method. 
+    /// expanding rented arrays with its EnsureCapacity method.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class DynamicArrayPool<T>

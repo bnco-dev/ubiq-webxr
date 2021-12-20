@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System.IO;
-using System.Threading;
 using System.Diagnostics;
 
 public static class ProjectTools

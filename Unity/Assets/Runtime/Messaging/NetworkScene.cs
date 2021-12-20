@@ -1,10 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Threading;
-using System.Text;
+﻿using System.Collections.Generic;
 using System;
 using Ubiq.Networking;
-using UnityEngine.SceneManagement;
 using UnityEngine;
 using UnityEngine.Profiling;
 using System.Linq;
