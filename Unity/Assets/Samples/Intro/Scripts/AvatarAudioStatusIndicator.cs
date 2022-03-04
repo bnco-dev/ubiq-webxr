@@ -41,7 +41,7 @@ namespace Ubiq.Samples
                 return;
             }
 
-            UpdateIndicator(SIPSorcery.Net.RTCIceConnectionState.disconnected);
+            UpdateIndicator(IceConnectionState.disconnected);
             peerConnectionManager.OnPeerConnection.AddListener(
                 PeerConnectionManager_OnPeerConnection,runExisting:true);
         }
@@ -61,7 +61,7 @@ namespace Ubiq.Samples
 
         private void PeerConnectionManager_OnPeerConnection(VoipPeerConnection pc)
         {
-            if (pc == peerConnection || pc.PeerUuid != avatar.Peer.UUID)
+            if (pc == peerConnection || pc.peerUuid != avatar.Peer.UUID)
             {
                 return;
             }
@@ -75,27 +75,27 @@ namespace Ubiq.Samples
             peerConnection.OnIceConnectionStateChanged.AddListener(PeerConnection_OnIceConnectionStateChanged);
         }
 
-        private void PeerConnection_OnIceConnectionStateChanged(SIPSorcery.Net.RTCIceConnectionState state)
+        private void PeerConnection_OnIceConnectionStateChanged(IceConnectionState state)
         {
             UpdateIndicator(state);
         }
 
-        private void UpdateIndicator (SIPSorcery.Net.RTCIceConnectionState state)
+        private void UpdateIndicator (IceConnectionState state)
         {
             switch (state)
             {
-                case SIPSorcery.Net.RTCIceConnectionState.closed:
-                case SIPSorcery.Net.RTCIceConnectionState.failed:
-                case SIPSorcery.Net.RTCIceConnectionState.disconnected:
+                case IceConnectionState.closed:
+                case IceConnectionState.failed:
+                case IceConnectionState.disconnected:
                     indicator.enabled = true;
                     indicator.color = failedColor;
                     break;
-                case SIPSorcery.Net.RTCIceConnectionState.@new:
-                case SIPSorcery.Net.RTCIceConnectionState.checking:
+                case IceConnectionState.@new:
+                case IceConnectionState.checking:
                     indicator.enabled = true;
                     indicator.color = attemptingColor;
                     break;
-                case SIPSorcery.Net.RTCIceConnectionState.connected:
+                case IceConnectionState.connected:
                 default:
                     indicator.enabled = false;
                     break;

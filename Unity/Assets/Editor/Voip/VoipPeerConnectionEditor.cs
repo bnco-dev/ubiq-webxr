@@ -9,12 +9,12 @@ namespace Ubiq.Voip
         {
             var pc = target as VoipPeerConnection;
 
-            if (pc.isSetup)
-            {
-                EditorGUILayout.LabelField("Peer", pc.PeerUuid);
-                EditorGUILayout.LabelField("Peer State", pc.peerConnectionState.ToString());
-                EditorGUILayout.LabelField("Ice State", pc.iceConnectionState.ToString());
-            }
+            // if (pc.isSetup)
+            // {
+            //     EditorGUILayout.LabelField("Peer", pc.PeerUuid);
+            //     EditorGUILayout.LabelField("Peer State", pc.peerConnectionState.ToString());
+            //     EditorGUILayout.LabelField("Ice State", pc.iceConnectionState.ToString());
+            // }
         }
     }
 }

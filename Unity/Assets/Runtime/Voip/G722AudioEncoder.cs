@@ -32,7 +32,12 @@ namespace Ubiq.Voip
         //     return encodedByteCount;
         // }
 
-        public byte[] Encode(short[] pcm)
+        public static int GetEncodedByteLength (int pcmLength)
+        {
+            return pcmLength / 2;
+        }
+
+        public void Encode(byte[] outputBuffer, short[] pcm)
         {
             if (g722Codec == null)
             {
@@ -40,11 +45,7 @@ namespace Ubiq.Voip
                 g722CodecState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
             }
 
-            var requiredEncodedByteCount = pcm.Length / 2;
-            var enc = new byte[requiredEncodedByteCount];
-
-            g722Codec.Encode(g722CodecState,enc,pcm,pcm.Length);
-            return enc;
+            g722Codec.Encode(g722CodecState,outputBuffer,pcm,pcm.Length);
         }
 
         // public short[] Resample(short[] pcm, int inRate, int outRate)

@@ -27,7 +27,7 @@ namespace Ubiq.Samples
                     if (base64image.Length > 0)
                     {
                         var texture = new Texture2D(1, 1);
-                        texture.LoadImage(Convert.FromBase64String(base64image));
+                        // texture.LoadImage(Convert.FromBase64String(base64image));
                         existing = image;
                         ScenePreview.texture = texture;
                     }

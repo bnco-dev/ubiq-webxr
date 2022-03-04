@@ -8,6 +8,7 @@ using UnityEngine.Events;
 using SIPSorcery.Net;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using Ubiq.Voip.Implementations;
 
 namespace Ubiq.Voip
 {
@@ -17,67 +18,6 @@ namespace Ubiq.Voip
     [NetworkComponentId(typeof(VoipPeerConnectionManager), 50)]
     public class VoipPeerConnectionManager : MonoBehaviour, INetworkComponent
     {
-        // SipSorcery peer connections are slow to instantiate as cert
-        // generation seems to take a while. This at least allows that to happen
-        // on a separate thread.
-        private class RTCPeerConnectionSource
-        {
-            private List<RTCIceServer> iceServers = new List<RTCIceServer>();
-
-            public void ClearIceServers ()
-            {
-                iceServers.Clear();
-            }
-
-            public void AddIceServer (string uri, string username = "",
-                string pass = "")
-            {
-                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(pass))
-                {
-                    iceServers.Add(new RTCIceServer {
-                        urls = uri
-                    });
-                }
-                else
-                {
-                    iceServers.Add(new RTCIceServer {
-                        urls = uri,
-                        username = username,
-                        credential = pass,
-                        credentialType = RTCIceCredentialType.password
-                    });
-                }
-            }
-
-            public Task<RTCPeerConnection> Acquire ()
-            {
-                return Task.Run(() => Create());
-            }
-
-            private RTCPeerConnection Create()
-            {
-                return new RTCPeerConnection(new RTCConfiguration
-                {
-                    iceServers = new List<RTCIceServer>(iceServers),
-                });
-            }
-        }
-
-        [Serializable]
-        private class IceServerDetails
-        {
-            public string uri;
-            public string username;
-            public string password;
-
-            public IceServerDetails(string uri, string username, string password)
-            {
-                this.uri = uri;
-                this.username = username;
-                this.password = password;
-            }
-        }
-
         [Serializable]
         private class IceServerDetailsCollection
         {
@@ -89,14 +29,10 @@ namespace Ubiq.Voip
         private Dictionary<string, VoipPeerConnection> peerUuidToConnection;
         private NetworkContext context;
 
-        private RTCPeerConnectionSource peerConnectionSource;
-
         private string prevIceServersString;
-        private IceServerDetailsCollection iceServers;
+        private IceServerDetailsCollection iceServers = new IceServerDetailsCollection();
 
-        public class OnPeerConnectionEvent : ExistingListEvent<VoipPeerConnection>
-        {
-        }
+        public class OnPeerConnectionEvent : ExistingListEvent<VoipPeerConnection>{}
 
         /// <summary>
         /// Fires when a new (local) PeerConnection is created by an instance of this Component. This may be a new or replacement PeerConnection.
@@ -112,7 +48,6 @@ namespace Ubiq.Voip
 
         private void Awake()
         {
-            peerConnectionSource = new RTCPeerConnectionSource();
             client = GetComponentInParent<RoomClient>();
             peerUuidToConnection = new Dictionary<string, VoipPeerConnection>();
             OnPeerConnection.SetExisting(peerUuidToConnection.Values);
@@ -138,7 +73,6 @@ namespace Ubiq.Voip
                 client.OnPeerRemoved.RemoveListener(OnPeerRemoved);
                 client.OnRoomUpdated.RemoveListener(OnRoomUpdated);
             }
-            peerConnectionSource = null;
         }
 
         private void UpdateIceServerCollection (IRoom room)
@@ -150,16 +84,7 @@ namespace Ubiq.Voip
             if (iceServersString != null
                 && iceServersString != prevIceServersString)
             {
-                // Allocates, but this shouldn't happen frequently
-                iceServers = JsonUtility.FromJson<IceServerDetailsCollection>(iceServersString);
-
-                peerConnectionSource.ClearIceServers();
-                for (int i = 0; i < iceServers.servers.Count; i++)
-                {
-                    var server = iceServers.servers[i];
-                    peerConnectionSource.AddIceServer(server.uri,server.username,server.password);
-                }
-
+                JsonUtility.FromJsonOverwrite(iceServersString,iceServers);
                 prevIceServersString = iceServersString;
             }
         }
@@ -208,6 +133,7 @@ namespace Ubiq.Voip
             if (peerUuidToConnection.TryGetValue(peer.UUID, out var connection))
             {
                 // Audiosinks are created per connection
+                // todo
                 Destroy(connection.audioSink.gameObject);
                 Destroy(connection.gameObject);
                 peerUuidToConnection.Remove(peer.UUID);
@@ -258,7 +184,7 @@ namespace Ubiq.Voip
             // but here make it a child to avoid cluttering scene graph
             audioSink.transform.SetParent(pc.transform);
 
-            pc.Setup(objectid,peerUuid,polite,audioSource,audioSink,peerConnectionSource.Acquire());
+            pc.Setup(objectid,peerUuid,polite,iceServers.servers,audioSource,audioSink);
 
             peerUuidToConnection.Add(peerUuid, pc);
             OnPeerConnection.Invoke(pc);
@@ -282,7 +208,7 @@ namespace Ubiq.Voip
         {
             OnPeerConnection.AddListener((pc) =>
             {
-                if (pc.PeerUuid == peerUUID)
+                if (pc.peerUuid == peerUUID)
                 {
                     then.Invoke(pc);
                 }

@@ -70,7 +70,9 @@ namespace Ubiq.Samples
 
             var volumeWindowSampleCount = GetVolumeWindowSampleCount();
 
-            var stats = voipAvatar.peerConnection.audioSink.lastFrameStats;
+            // todo
+            // var stats = voipAvatar.peerConnection.audioSink.lastFrameStats;
+            var stats = voipAvatar.peerConnection.GetLastFrameStats();
             currentFrameVolumeSum += stats.volume;
             currentFrameSampleCount += stats.samples;
 
@@ -84,6 +86,7 @@ namespace Ubiq.Samples
 
         private int GetVolumeWindowSampleCount()
         {
+            // todo
             var sampleRate = voipAvatar.peerConnection.audioSink.sampleRate;
             return (int)(sampleSecondsPerIndicator * sampleRate);
         }

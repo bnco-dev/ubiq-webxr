@@ -41,11 +41,13 @@ namespace Ubiq.Avatars
 
         private void OnPeerConnection(VoipPeerConnection peerConnection)
         {
-            if (peerConnection.PeerUuid == avatar.Peer.UUID)
+            if (peerConnection.peerUuid == avatar.Peer.UUID)
             {
+                // todo
                 this.peerConnection = peerConnection;
                 peerConnection.audioSink.unityAudioSource.spatialBlend = 1.0f;
                 sinkTransform = peerConnection.audioSink.transform;
+                // todo
             }
         }
 
@@ -55,6 +57,14 @@ namespace Ubiq.Avatars
             {
                 sinkTransform.position = audioSourcePosition.position;
             }
+
+            // debug setremote
+            if (peerConnection)
+            {
+                peerConnection.SetRemotePeerPosition(
+                    audioSourcePosition.position,audioSourcePosition.rotation);
+            }
+            // debug setremote
         }
     }
 }

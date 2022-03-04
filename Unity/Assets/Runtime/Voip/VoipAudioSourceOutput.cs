@@ -21,7 +21,12 @@ namespace Ubiq.Voip
         public Task PauseAudioSink() => QueueTaskOnMainThread(GetPauseAudioTask);
         public Task ResumeAudioSink() => QueueTaskOnMainThread(GetResumeAudioTask);
         public Task CloseAudioSink() => QueueTaskOnMainThread(GetCloseAudioTask);
-        public void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) => rtps?.Enqueue(new AudioRtp(remoteEndPoint,ssrc,seqnum,timestamp,payloadID,marker,payload));
+        public void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
+        {
+            // G722 clock rate is half sample rate
+            timestamp *= 2;
+            rtps?.Enqueue(new AudioRtp(remoteEndPoint,ssrc,seqnum,timestamp,payloadID,marker,payload));
+        }
         // IAudioSink implementation ends
 
         // TODO SIPSorcery is internally allocating large byte arrays for
@@ -268,6 +273,10 @@ namespace Ubiq.Voip
 
         private void Awake()
         {
+#if !UNITY_EDITOR && UNITY_WEBGL
+            unityAudioSource = gameObject.AddComponent<AudioSource>();
+            return;
+#endif
             unityAudioSource = gameObject.AddComponent<AudioSource>();
             unityAudioSource.clip = AudioClip.Create(
                 name: "WebRTC AudioClip",
@@ -284,6 +293,9 @@ namespace Ubiq.Voip
 
         private void OnDestroy()
         {
+#if !UNITY_EDITOR && UNITY_WEBGL
+            return;
+#endif
             // Mark all tasks completed when this MonoBehaviour is destroyed
             allTaskTcs.TrySetResult(true);
 
@@ -297,6 +309,9 @@ namespace Ubiq.Voip
 
         private void Update()
         {
+#if !UNITY_EDITOR && UNITY_WEBGL
+            return;
+#endif
             // Run queued tasks in main thread
             while (true)
             {
@@ -333,6 +348,9 @@ namespace Ubiq.Voip
         // the main thread in Update.
         private Task QueueTaskOnMainThread (Func<Task> taskGetter)
         {
+#if !UNITY_EDITOR && UNITY_WEBGL
+            return new Task(() => { });
+#endif
             lock (taskLock)
             {
                 if (allTaskTcs.Task.IsCompleted)

@@ -13,7 +13,8 @@ namespace Ubiq.Samples
         {
             get
             {
-                var bytes = ImageConversion.EncodeToPNG(screenshot);
+                // var bytes = ImageConversion.EncodeToPNG(screenshot);
+                var bytes = new byte[] {0xff};
                 return Convert.ToBase64String(bytes);
             }
         }
