@@ -219,6 +219,7 @@ namespace Ubiq.XR
         public bool GripState;
         public bool TriggerState;
         public bool PrimaryButtonState;
+        public bool MenuButtonState;
 
         private bool initialised;
 
@@ -318,6 +319,11 @@ namespace Ubiq.XR
 
                 foreach (var item in controllers)
                 {
+                    item.TryGetFeatureValue(CommonUsages.menuButton, out MenuButtonState);
+                }
+
+                foreach (var item in controllers)
+                {
                     item.TryGetFeatureValue(CommonUsages.primary2DAxis, out Joystick);
                 }
             }
@@ -325,6 +331,7 @@ namespace Ubiq.XR
             TriggerPress.Update(TriggerState);
             GripPress.Update(GripState);
             PrimaryButtonPress.Update(PrimaryButtonState);
+            MenuButtonPress.Update(MenuButtonState);
             JoystickSwipe.Update(Joystick.x);
         }
 
@@ -341,6 +348,19 @@ namespace Ubiq.XR
             get
             {
                 return poseDriver.poseSource == TrackedPose.RightPose;
+            }
+        }
+
+        public void Vibrate(float amplitude, float duration) {
+            if (controllers != null)
+            {
+                for (int i = 0; i < controllers.Count; i++)
+                {
+                    if (controllers[i].isValid)
+                    {
+                        controllers[i].SendHapticImpulse(0,amplitude,duration);
+                    }
+                }
             }
         }
 
