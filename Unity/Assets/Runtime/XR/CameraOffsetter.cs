@@ -4,10 +4,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
+using WebXR;
 
 namespace Ubiq.XR
 {
-    // For WebXR this is a dummy class. Maintain public interface, otherwise do nothing
     public class CameraOffsetter : MonoBehaviour
     {
 
@@ -57,6 +57,25 @@ namespace Ubiq.XR
         float m_CameraYOffset = k_DefaultCameraYOffset;
         /// <summary>Gets or sets the amount the camera is offset from the floor (by moving the camera offset object).</summary>
         public float cameraYOffset { get { return m_CameraYOffset; } set { m_CameraYOffset = value; } }
+
+        private void Start()
+        {
+            WebXRManager.OnXRChange += WebXRManager_OnXRChange;
+        }
+
+        private void WebXRManager_OnXRChange(WebXRState state, int viewsCount, Rect leftRect, Rect rightRect)
+        {
+            if (state == WebXRState.VR || state == WebXRState.AR)
+            {
+                // Assume floor origin
+                cameraFloorOffsetObject.transform.localPosition = Vector3.zero;
+            }
+            else
+            {
+                // Non-VR/AR mode - elevated origin
+                cameraFloorOffsetObject.transform.localPosition = new Vector3(0,cameraYOffset,0);
+            }
+        }
     }
 }
 
