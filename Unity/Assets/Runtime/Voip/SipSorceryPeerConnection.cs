@@ -169,8 +169,7 @@ namespace Ubiq.Voip.SipSorcery
 
             pc.onicecandidate += (iceCandidate) =>
             {
-                if (pc.signalingState == RTCSignalingState.have_remote_offer ||
-                    pc.signalingState == RTCSignalingState.stable)
+                if (iceCandidate != null && !string.IsNullOrEmpty(iceCandidate.candidate))
                 {
                     mainThreadActions.Enqueue(() => SendIceCandidate(iceCandidate));
                 }
@@ -284,22 +283,31 @@ namespace Ubiq.Voip.SipSorcery
                 }
 
                 Debug.Log($"Got remote SDP, type {ssOffer.type}");
-                var result = rtcPeerConnection.setRemoteDescription(ssOffer);
-                if (result != SetDescriptionResultEnum.OK)
+                switch(ssOffer.type)
                 {
-                    Debug.Log($"Failed to set remote description, {result}.");
-                    rtcPeerConnection.Close("Failed to set remote description");
-                }
-                else
-                {
-                    if(rtcPeerConnection.signalingState == RTCSignalingState.have_remote_offer)
+                    case RTCSdpType.answer:
                     {
+                        var result = rtcPeerConnection.setRemoteDescription(ssOffer);
+                        if (result != SetDescriptionResultEnum.OK)
+                        {
+                            Debug.Log($"Failed to set remote description, {result}.");
+                            rtcPeerConnection.Close("Failed to set remote description");
+                        }
+                        break;
+                    }
+                    case RTCSdpType.offer:
+                    {
+                        var result = rtcPeerConnection.setRemoteDescription(ssOffer);
+                        if (result != SetDescriptionResultEnum.OK)
+                        {
+                            Debug.Log($"Failed to set remote description, {result}.");
+                            rtcPeerConnection.Close("Failed to set remote description");
+                        }
+
                         var answerSdp = rtcPeerConnection.createAnswer();
                         rtcPeerConnection.setLocalDescription(answerSdp);
-
-                        Debug.Log($"Sending SDP answer");
-
                         SendOffer(answerSdp);
+                        break;
                     }
                 }
             }
