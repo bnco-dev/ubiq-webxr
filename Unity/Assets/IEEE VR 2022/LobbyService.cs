@@ -8,21 +8,21 @@ using UnityEngine;
 
 /*
  * Welcome to the IEEE VR 2022 Ubiq Tutorial!
- * 
- * This Component splits users evenly between rooms into small groups 
+ *
+ * This Component splits users evenly between rooms into small groups
  * automatically where they can discuss with Ubiq team-members, as well as
  * showing what kind of things can achieved with Ubiq.
- * 
+ *
  * Once moved into a breakout room, you can still easily move between rooms
  * using the Join Codes to meet up with specific people.
- * 
- * 
+ *
+ *
  * The Component works by monitoring the number of people in the Lobby Room.
  * Once the Peer Count reaches a threshold, all the Peers move together into
  * a new Room.
  * This is achieved by each Peer computing the same Room Id individually.
  * The Room Id is a hash of the last Peer to join the Room.
- * 
+ *
  */
 
 public class LobbyService : MonoBehaviour
