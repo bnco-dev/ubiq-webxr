@@ -37,17 +37,25 @@ namespace Ubiq.Voip
 
         private class MicrophoneListener
         {
+            public float gain;
+
             public string deviceName { get; private set; }
             public AudioClip audioClip { get; private set; }
-            public float gain;
+            public int micBuffLengthSeconds { get; private set; }
+            public int frequency { get; private set; }
+            public int outBuffLengthSamples { get; private set; }
+            public float[] samples { get; private set; }
+            public bool suspended { get; private set; }
+            public bool started { get; private set; }
 
             private int absReadPos;
             private int absMicPos;
             private int lastMicPos;
 
-            public float[] samples { get; private set; }
-
-            public bool IsRecording () => audioClip != null;
+            public bool IsRecording ()
+            {
+                return audioClip != null;
+            }
 
             private void UpdateMicrophonePosition ()
             {
@@ -103,11 +111,44 @@ namespace Ubiq.Voip
                     return;
                 }
 
-                this.deviceName = deviceName;
+                started = true;
 
-                if (samples == null || samples.Length != outBuffLengthSamples)
+                this.deviceName = deviceName;
+                this.micBuffLengthSeconds = micBuffLengthSeconds;
+                this.frequency = frequency;
+                this.outBuffLengthSamples = outBuffLengthSamples;
+
+                if (!suspended)
                 {
-                    samples = new float[outBuffLengthSamples];
+                    Resume();
+                }
+            }
+
+            public void Suspend ()
+            {
+                suspended = true;
+
+                if (audioClip)
+                {
+                    Destroy(audioClip);
+                    audioClip = null;
+                }
+
+                Microphone.End(deviceName);
+            }
+
+            public void Resume ()
+            {
+                suspended = false;
+
+                if (!started)
+                {
+                    return;
+                }
+
+                if (samples == null || samples.Length != this.outBuffLengthSamples)
+                {
+                    samples = new float[this.outBuffLengthSamples];
                 }
 
                 audioClip = Microphone.Start(deviceName,loop:true,
@@ -115,16 +156,23 @@ namespace Ubiq.Voip
                 absMicPos = absReadPos = lastMicPos = Microphone.GetPosition(deviceName);
             }
 
+            public void Restart ()
+            {
+                Suspend();
+                Resume();
+            }
+
             public void End ()
             {
-                if (audioClip)
-                {
-                    Microphone.End(deviceName);
-                    Destroy(audioClip);
-                    audioClip = null;
-                    deviceName = null;
-                }
+                Suspend();
+                started = false;
             }
+        }
+
+        public struct Stats
+        {
+            public float volume;
+            public int samples;
         }
 
         public float gain = 1.0f;
@@ -157,6 +205,11 @@ namespace Ubiq.Voip
 #if UNITY_ANDROID && !UNITY_EDITOR
         private bool microphoneAuthorized = false;
 #endif
+
+        private const float LOW_VOL_THRESHOLD = 0.0001f;
+        private const float LOW_VOL_TIMEOUT = 10.0f;
+
+        private float lastGoodAudioSeconds = -1.0f;
 
         private void Awake()
         {
@@ -220,17 +273,59 @@ namespace Ubiq.Voip
             // Send samples if we have them
             while (microphoneListener.Advance())
             {
+                var vol = 0.0f;
                 for (int i = 0; i < microphoneListener.samples.Length; i++)
                 {
                     var floatSample = microphoneListener.samples[i];
+                    vol += floatSample;
                     floatSample = Mathf.Clamp(floatSample*gain,-.999f,.999f);
                     pcm[i] = (short)(floatSample * short.MaxValue);
+                }
+
+                vol /= microphoneListener.samples.Length;
+                if (vol > LOW_VOL_THRESHOLD)
+                {
+                    lastGoodAudioSeconds = Time.realtimeSinceStartup;
                 }
 
                 audioEncoder.Encode(encoded,pcm);
                 OnAudioSourceEncodedSample.Invoke(RTP_TIMESTAMP_PER_BUFFER,encoded);
             }
+
+            if (!microphoneListener.suspended
+                && Time.realtimeSinceStartup > lastGoodAudioSeconds + LOW_VOL_TIMEOUT)
+            {
+                Debug.Log("Timed out while waiting for good mic samples, restarting device");
+                microphoneListener.Restart();
+                lastGoodAudioSeconds = Time.realtimeSinceStartup;
+            }
         }
+
+// #if UNITY_ANDROID && !UNITY_EDITOR
+//         private void OnApplicationFocus (bool hasFocus)
+//         {
+//             if (!hasFocus)
+//             {
+//                 microphoneListener.Suspend();
+//             }
+//             else
+//             {
+//                 microphoneListener.Resume();
+//             }
+//         }
+
+//         private void OnApplicationPause (bool isPaused)
+//         {
+//             if (isPaused)
+//             {
+//                 microphoneListener.Suspend();
+//             }
+//             else
+//             {
+//                 microphoneListener.Resume();
+//             }
+//         }
+// #endif
 
         // Thread-safe task queue - tasks eventually get executed synchronously on
         // the main thread in Update.
