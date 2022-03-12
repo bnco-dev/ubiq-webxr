@@ -19,20 +19,20 @@ namespace Ubiq.Samples
         {
             Joincode.text = client.Room.JoinCode.ToUpperInvariant();
 
-            var image = client.Room["scene-image"];
-            if (image != null && image != existing)
-            {
-                client.GetBlob(client.Room.UUID, image, (base64image) =>
-                {
-                    if (base64image.Length > 0)
-                    {
-                        var texture = new Texture2D(1, 1);
-                        // texture.LoadImage(Convert.FromBase64String(base64image));
-                        existing = image;
-                        ScenePreview.texture = texture;
-                    }
-                });
-            }
+            // var image = client.Room["scene-image"];
+            // if (image != null && image != existing)
+            // {
+            //     client.GetBlob(client.Room.UUID, image, (base64image) =>
+            //     {
+            //         if (base64image.Length > 0)
+            //         {
+            //             var texture = new Texture2D(1, 1);
+            //             // texture.LoadImage(Convert.FromBase64String(base64image));
+            //             existing = image;
+            //             ScenePreview.texture = texture;
+            //         }
+            //     });
+            // }
         }
     }
 }

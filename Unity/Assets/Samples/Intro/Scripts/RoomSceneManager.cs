@@ -46,15 +46,15 @@ namespace Ubiq.Samples
             client.Room["scene-name"] = active.name;
             client.Room["scene-path"] = active.path;
 
-            foreach (var item in active.GetRootGameObjects())
-            {
-                var info = item.GetComponentInChildren<SceneInfo>();
-                if(info)
-                {
-                    client.Room["scene-image"] = client.SetBlob(client.Room.UUID, info.base64image);
-                    break;
-                }
-            }
+            // foreach (var item in active.GetRootGameObjects())
+            // {
+            //     var info = item.GetComponentInChildren<SceneInfo>();
+            //     if(info)
+            //     {
+            //         client.Room["scene-image"] = client.SetBlob(client.Room.UUID, info.base64image);
+            //         break;
+            //     }
+            // }
         }
 
         public void ChangeScene(string name)
