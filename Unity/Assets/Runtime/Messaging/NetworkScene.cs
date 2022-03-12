@@ -103,6 +103,8 @@ namespace Ubiq.Messaging
 
         private void Awake()
         {
+            Application.runInBackground = true;
+
             if (transform.parent == null)
             {
                 if (rootNetworkScene == null)
