@@ -338,6 +338,18 @@ var unityWebRtcInteropLibrary = {
         //   }, context.error);
     },
 
+    JS_WebRTC_ResumeAudioContext: function() {
+        if (!context.audioContext){
+            context.audioContext = new AudioContext();
+        }
+
+        if (context.audioContext.state == "suspended") {
+            context.audioContext.resume();
+        }
+
+        return context.audioContext.state != "suspended";
+    },
+
     JS_WebRTC_Close: function(id) {
         let instance = context.instances[id];
         if (!instance) {
@@ -400,7 +412,10 @@ var unityWebRtcInteropLibrary = {
                 if (!instance.pc.remoteDescription) {
                     return false;
                 }
-                instance.pc.addIceCandidate(JSON.parse(UTF8ToString(args)));
+                instance.pc.addIceCandidate(JSON.parse(UTF8ToString(args)))
+                .catch((error) => {
+                    console.warn("Ignoring ice candidate after add fail: " + error);
+                });
                 break;
         }
 

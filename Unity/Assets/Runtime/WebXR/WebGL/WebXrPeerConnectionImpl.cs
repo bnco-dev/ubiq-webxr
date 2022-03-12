@@ -23,6 +23,8 @@ namespace Ubiq.WebXR
         [DllImport("__Internal")]
         public static extern void JS_WebRTC_New_Start(int pc);
         [DllImport("__Internal")]
+        public static extern bool JS_WebRTC_ResumeAudioContext();
+        [DllImport("__Internal")]
         public static extern void JS_WebRTC_Close(int pc);
         [DllImport("__Internal")]
         public static extern bool JS_WebRTC_IsSetup(int pc);
@@ -155,6 +157,8 @@ namespace Ubiq.WebXR
 
             while(true)
             {
+                JS_WebRTC_ResumeAudioContext();
+
                 ProcessSignallingMessages();
 
                 UpdateIceConnectionState();
