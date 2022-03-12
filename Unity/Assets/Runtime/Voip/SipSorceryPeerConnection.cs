@@ -28,16 +28,16 @@ namespace Ubiq.Voip.SipSorcery
 
         public async void Dispose()
         {
-            if (setupTask != null)
-            {
-                await setupTask.ConfigureAwait(false);
-                setupTask.Result.Dispose();
-            }
-
             if (updateCoroutine != null)
             {
                 context.StopCoroutine(updateCoroutine);
                 updateCoroutine = null;
+            }
+
+            if (setupTask != null)
+            {
+                await setupTask.ConfigureAwait(false);
+                setupTask.Result.Dispose();
             }
         }
 
