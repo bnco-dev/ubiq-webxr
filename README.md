@@ -1,3 +1,10 @@
+# READ THIS FIRST
+
+This repository contains a branch of [Ubiq](https://github.com/UCL-VR/ubiq) designed to run as a cross platform demo for IEEEVR 2022. It is here only for archival purposes as it is now well behind the main branch and entirely unsupported. 
+
+<details>
+  <summary>Original readme</summary>
+
 # Welcome to Ubiq
 
 ![Picture of Avatars Waving](Documentation/docs/images/0f1c2fc3-2615-4f15-93c4-7533af6697eb.png)
@@ -38,3 +45,4 @@ For next steps see our Getting Started guide.
 ## Awards
 
 <img src="Documentation/docs/images/8e9dfe00-e9d5-4980-8373-e264c7f4c1e1.png" width=20%/>
+</details>
